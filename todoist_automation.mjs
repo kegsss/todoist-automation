@@ -1,9 +1,22 @@
 import { TodoistApi } from '@doist/todoist-api-typescript';
 import path from 'path';
 import { promises as fs } from 'fs';
+import fetch from 'node-fetch';
+
+// Define the path for processed_tasks.json
+const processedTasksFile = path.resolve('processed_tasks.json');
+
+// Ensure processed_tasks.json exists
+async function ensureProcessedTasksFile() {
+  try {
+    await fs.access(processedTasksFile);
+  } catch {
+    console.log("No processed_tasks.json found. Creating a new one...");
+    await fs.writeFile(processedTasksFile, JSON.stringify([]));
+  }
+}
 
 const api = new TodoistApi(process.env.TODOIST_API_TOKEN);
-const processedTasksFile = path.join(process.cwd(), 'processed_tasks.json');
 
 async function handleRecurringTasksWithHistory() {
   try {
@@ -42,6 +55,8 @@ async function handleRecurringTasksWithHistory() {
 
     const { items: completedTasks } = await completedTasksResponse.json();
     console.log(`Found ${completedTasks.length} completed tasks in the "Chores" project.`);
+
+    await ensureProcessedTasksFile();
 
     let processedTasks = [];
     try {
