@@ -1,0 +1,26 @@
+name: Run Todoist Automation
+
+on:
+  schedule:
+    # Run daily at midnight EST (5 AM UTC)
+    - cron: "0 5 * * *"
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Install Dependencies
+        run: npm install @doist/todoist-api-typescript
+
+      - name: Run Automation Script
+        run: node todoist_automation.js
+        env:
+          TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
