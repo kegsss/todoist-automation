@@ -1,5 +1,7 @@
 const { TodoistApi } = require('@doist/todoist-api-typescript');
-const api = new TodoistApi('YOUR_API_TOKEN');
+
+// Initialize the Todoist API using the environment variable for the API token
+const api = new TodoistApi(process.env.TODOIST_API_TOKEN);
 
 async function handleRecurringTasksWithHistory() {
   try {
@@ -15,7 +17,9 @@ async function handleRecurringTasksWithHistory() {
     const tasks = await api.getTasks({ projectId: choresProject.id });
 
     for (const task of tasks) {
+      // Check if the task is recurring
       if (task.due && task.due.isRecurring) {
+        // If the task is completed
         if (task.completed) {
           console.log(`Task "${task.content}" is completed.`);
 
