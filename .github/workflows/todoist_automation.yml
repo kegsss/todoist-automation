@@ -1,9 +1,12 @@
 name: Run Todoist Automation Script
 
 on:
+  # Schedule: Runs every day at midnight EST (convert to UTC)
   schedule:
-    # Runs every day at midnight EST
-    - cron: '0 5 * * *' # UTC time (EST = UTC-5)
+    - cron: '0 5 * * *' # Midnight EST = 5:00 AM UTC
+
+  # Allow manual runs
+  workflow_dispatch:
 
 jobs:
   run-script:
