@@ -1,74 +1,61 @@
-const { TodoistApi } = require('@doist/todoist-api-typescript');
+const todoist = require('@doist/todoist-api-typescript');
 
-// Use the API token from the environment variable
-const api = new TodoistApi(process.env.TODOIST_API_TOKEN);
+// Replace with your Todoist API token
+const api = new todoist.TodoistApi('YOUR_API_TOKEN');
 
-async function handleRecurringTasksWithHistory() {
-  try {
-    console.log('Starting Todoist Automation Script...');
+async function processTasks() {
+    try {
+        // Fetch tasks for the specified project
+        const projectId = '2343342190'; // Replace with your project ID
+        const tasks = await api.getTasks({ projectId });
 
-    // Step 1: Fetch all projects
-    console.log('Fetching all projects...');
-    const projects = await api.getProjects();
-    console.log('Projects fetched:', projects);
+        console.log(`\n--- Task Processing Workflow Started ---\n`);
+        console.log(`Total tasks fetched: ${tasks.length}\n`);
 
-    // Step 2: Find the "Chores" project
-    const choresProject = projects.find(project => project.name === 'Chores');
-    console.log('Chores project:', choresProject);
+        let tasksProcessed = 0; // Track how many tasks were processed
+        let completedTasks = 0; // Track how many tasks were already completed
+        let recurringTasksSkipped = 0; // Track recurring tasks not due yet
 
-    if (!choresProject) {
-      console.error('No "Chores" project found! Exiting script.');
-      return;
-    }
+        // Iterate through tasks
+        tasks.forEach(task => {
+            console.log(`Processing task: "${task.content}" (ID: ${task.id})`);
 
-    // Step 3: Fetch tasks in the "Chores" project
-    console.log(`Fetching tasks for project "${choresProject.name}" (ID: ${choresProject.id})...`);
-    const tasks = await api.getTasks({ projectId: choresProject.id });
-    console.log('Tasks fetched:', tasks);
+            if (task.isCompleted) {
+                console.log(`  - Skipped: Task is already completed.`);
+                completedTasks++;
+                return;
+            }
 
-    if (tasks.length === 0) {
-      console.log('No tasks found in the "Chores" project. Exiting script.');
-      return;
-    }
+            if (task.due?.isRecurring && new Date(task.due.datetime) > new Date()) {
+                console.log(`  - Skipped: Recurring task not due yet.`);
+                recurringTasksSkipped++;
+                return;
+            }
 
-    // Step 4: Process each task
-    for (const task of tasks) {
-      console.log('Processing task:', task.content);
-      console.log('Task details:', task);
+            // Add your action logic here (e.g., assign or modify the task)
+            console.log(`  - Action: Assigning task "${task.content}" to the appropriate user.`);
+            // Example action (replace with your actual logic)
+            // api.updateTask(task.id, { responsibleUid: 'USER_ID' });
 
-      // Check if the task is recurring
-      if (task.due && task.due.isRecurring) {
-        console.log(`Task "${task.content}" is recurring.`);
+            tasksProcessed++;
+        });
 
-        // Check if the task is completed
-        if (task.completed) {
-          console.log(`Task "${task.content}" is completed.`);
+        console.log(`\n--- Task Processing Summary ---`);
+        console.log(`Tasks fetched: ${tasks.length}`);
+        console.log(`Tasks completed (skipped): ${completedTasks}`);
+        console.log(`Recurring tasks skipped: ${recurringTasksSkipped}`);
+        console.log(`Tasks processed: ${tasksProcessed}`);
 
-          // Duplicate the task to preserve completion history
-          const newTask = await api.addTask({
-            content: task.content,
-            projectId: choresProject.id,
-            dueDate: task.due.date, // Copy the due date
-            assigneeId: task.assigneeId, // Preserve the assignee
-          });
-          console.log(`Created duplicate task for "${task.content}" with ID: ${newTask.id}`);
-
-          // Unassign the original recurring task for the next instance
-          await api.updateTask(task.id, { assigneeId: null });
-          console.log(`Unassigned the next occurrence of task "${task.content}".`);
+        if (tasksProcessed === 0) {
+            console.log(`\nNo tasks required processing. Workflow completed.`);
         } else {
-          console.log(`Task "${task.content}" is not completed yet.`);
+            console.log(`\nWorkflow completed with actions on ${tasksProcessed} task(s).`);
         }
-      } else {
-        console.log(`Task "${task.content}" is not recurring.`);
-      }
-    }
 
-    console.log('Todoist Automation Script completed successfully.');
-  } catch (error) {
-    console.error('Error encountered during script execution:', error);
-  }
+    } catch (error) {
+        console.error('An error occurred:', error.message);
+    }
 }
 
-// Execute the function
-handleRecurringTasksWithHistory();
+// Run the task processing function
+processTasks();
