@@ -12,17 +12,24 @@ jobs:
   run-script:
     runs-on: ubuntu-latest
     steps:
+      # Step 1: Check out repository
       - name: Check out repository
         uses: actions/checkout@v3
 
+      # Step 2: Set up Node.js and install dependencies
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '22'
+          cache: 'npm'
+
+      - name: Log Node.js version
+        run: node -v
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
 
+      # Step 3: Run the automation script
       - name: Run Todoist Automation Script
         env:
           TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
